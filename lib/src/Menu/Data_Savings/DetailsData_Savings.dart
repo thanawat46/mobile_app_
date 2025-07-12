@@ -57,39 +57,105 @@ class _DetailsData_SavingsState extends State<DetailsData_Savings> {
     return 0.0;
   }
 
+  Future<void> _deleteUser() async {
+    final url = Uri.parse('${config.apiUrl}/users/${widget.idUser}');
+    try {
+      final response = await http.delete(url);
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        if (result['success'] == true) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ลบข้อมูลสำเร็จ')),
+          );
+          Navigator.pop(context, 'refresh'); // ✅ แก้ตรงนี้
+        } else {
+          _showError('เกิดข้อผิดพลาด: ${result['message']}');
+        }
+      } else {
+        _showError('ไม่สามารถลบได้ (${response.statusCode})');
+      }
+    } catch (e) {
+      _showError('เกิดข้อผิดพลาดขณะลบข้อมูล');
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  void _confirmDelete() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("ยืนยันการลบ"),
+        content: const Text("คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลผู้ใช้นี้?"),
+        actions: [
+          TextButton(
+            child: const Text("ยกเลิก"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text("ลบ", style: TextStyle(color: Colors.red)),
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteUser();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('รายละเอียดสมาชิก' , style: TextStyle(color: Colors.white)),
+        title: const Text('รายละเอียดสมาชิก', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : userData == null
-            ? const Center(
-            child: Text('ไม่พบข้อมูลผู้ใช้',
-                style: TextStyle(color: Colors.white, fontSize: 18)))
-            : Padding(
-          padding: const EdgeInsets.fromLTRB(16, 80, 16, 16),
-          child: GlassCard(
-            child: UserDetailSection(
-              userData: userData!,
-              totalDeposit: calculateTotalDeposit(),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
           ),
-        ),
+          isLoading
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : userData == null
+              ? const Center(
+              child: Text('ไม่พบข้อมูลผู้ใช้',
+                  style: TextStyle(color: Colors.white, fontSize: 18)))
+              : Padding(
+            padding: const EdgeInsets.fromLTRB(16, 80, 16, 80),
+            child: GlassCard(
+              child: UserDetailSection(
+                userData: userData!,
+                totalDeposit: calculateTotalDeposit(),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 20,
+            bottom: 20,
+            child: FloatingActionButton.extended(
+              onPressed: _confirmDelete,
+              backgroundColor: Colors.redAccent,
+              icon: const Icon(Icons.delete, color: Colors.white),
+              label: const Text("ลบข้อมูล", style: TextStyle(color: Colors.white)),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -135,8 +201,7 @@ class UserDetailSection extends StatelessWidget {
               UserInfoTile(
                 icon: Icons.savings,
                 label: 'ยอดเงินฝากรวม',
-                value:
-                '${NumberFormat("#,##0.0", "en_US").format(totalDeposit)} บาท',
+                value: '${NumberFormat("#,##0.0", "en_US").format(totalDeposit)} บาท',
                 highlight: true,
               ),
             ],
@@ -173,8 +238,7 @@ class UserInfoTile extends StatelessWidget {
           backgroundColor: Colors.blue.shade100,
           child: Icon(icon, color: Colors.blue.shade900),
         ),
-        title: Text(label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
         subtitle: Text(value ?? '-', style: const TextStyle(fontSize: 16)),
       ),
     );
