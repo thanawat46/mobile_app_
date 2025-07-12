@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import ' Create_Savings.dart';
 import 'DetailsData_Savings.dart';
 import 'package:mobile_app/constants.dart' as config;
 
@@ -95,8 +96,9 @@ class _SavingScreenState extends State<SavingScreen> {
                 itemBuilder: (context, index) => UserRowItem(
                   user: filteredUsers[index],
                   index: index,
-                  onTap: () {
-                    Navigator.push(
+                  // ✅ สำหรับเปิดดูรายละเอียด
+                  onTap: () async {
+                    final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => DetailsData_Savings(
@@ -104,7 +106,12 @@ class _SavingScreenState extends State<SavingScreen> {
                         ),
                       ),
                     );
+
+                    if (result == 'refresh') {
+                      await fetchUsers(); // รีเฟรชหลังลบ
+                    }
                   },
+
                 ),
               ),
             ),
@@ -123,7 +130,7 @@ class HeaderRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.blue[300],
+        color: Colors.blue,
         borderRadius: BorderRadius.circular(8),
       ),
       child: const Row(
@@ -226,7 +233,22 @@ class FooterButtons extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         ElevatedButton.icon(
-          onPressed: () {},
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CreateSavingsPage(idUser: idUser),
+              ),
+            );
+
+            if (result == 'refresh') {
+              // โหลดข้อมูลใหม่
+              if (context.mounted) {
+                final state = context.findAncestorStateOfType<_SavingScreenState>();
+                state?.fetchUsers();
+              }
+            }
+          },
           icon: const Icon(Icons.add, color: Colors.white),
           label: const Text('เพิ่มข้อมูล', style: TextStyle(color: Colors.white)),
           style: ElevatedButton.styleFrom(

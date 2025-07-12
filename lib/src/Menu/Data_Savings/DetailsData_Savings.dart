@@ -100,7 +100,7 @@ class _DetailsData_SavingsState extends State<DetailsData_Savings> {
           TextButton(
             child: const Text("ลบ", style: TextStyle(color: Colors.red)),
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(context, 'refresh');
               _deleteUser();
             },
           ),
