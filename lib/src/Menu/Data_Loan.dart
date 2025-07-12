@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../Home/HomePage.dart';
-import 'Data_Savings.dart';
+import 'Data_Savings/Data_Savings.dart';
 
 class LoanScreen extends StatefulWidget {
   final String idUser;

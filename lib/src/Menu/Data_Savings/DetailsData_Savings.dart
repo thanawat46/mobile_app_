@@ -1,0 +1,207 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
+import 'package:mobile_app/constants.dart' as config;
+
+class DetailsData_Savings extends StatefulWidget {
+  final String idUser;
+
+  const DetailsData_Savings({Key? key, required this.idUser}) : super(key: key);
+
+  @override
+  State<DetailsData_Savings> createState() => _DetailsData_SavingsState();
+}
+
+class _DetailsData_SavingsState extends State<DetailsData_Savings> {
+  Map<String, dynamic>? userData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserDetail();
+  }
+
+  Future<void> fetchUserDetail() async {
+    try {
+      final url = Uri.parse('${config.apiUrl}/users_data/${widget.idUser}');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true && data['user'] != null) {
+          setState(() {
+            userData = data['user'];
+            isLoading = false;
+          });
+        } else {
+          setState(() => isLoading = false);
+        }
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  double calculateTotalDeposit() {
+    final deposits = userData?['deposits'] ?? [];
+    if (deposits is List) {
+      return deposits.fold<double>(
+        0.0,
+            (sum, item) => sum + (item['deposit_amount'] ?? 0.0),
+      );
+    }
+    return 0.0;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('รายละเอียดสมาชิก' , style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : userData == null
+            ? const Center(
+            child: Text('ไม่พบข้อมูลผู้ใช้',
+                style: TextStyle(color: Colors.white, fontSize: 18)))
+            : Padding(
+          padding: const EdgeInsets.fromLTRB(16, 80, 16, 16),
+          child: GlassCard(
+            child: UserDetailSection(
+              userData: userData!,
+              totalDeposit: calculateTotalDeposit(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class UserDetailSection extends StatelessWidget {
+  final Map<String, dynamic> userData;
+  final double totalDeposit;
+
+  const UserDetailSection({
+    super.key,
+    required this.userData,
+    required this.totalDeposit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'ข้อมูลสมาชิก',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF0D47A1),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: ListView(
+            children: [
+              UserInfoTile(icon: Icons.badge, label: 'รหัสสมาชิก', value: userData['id_user']),
+              UserInfoTile(
+                icon: Icons.person,
+                label: 'ชื่อ',
+                value:
+                '${userData['pre_name'] ?? ''} ${userData['first_name'] ?? ''} ${userData['last_name'] ?? ''}',
+              ),
+              UserInfoTile(icon: Icons.verified_user, label: 'บทบาท', value: userData['role']),
+              UserInfoTile(icon: Icons.home, label: 'ที่อยู่', value: userData['address']),
+              UserInfoTile(icon: Icons.phone, label: 'เบอร์โทร', value: userData['phone_number']),
+              UserInfoTile(
+                icon: Icons.savings,
+                label: 'ยอดเงินฝากรวม',
+                value:
+                '${NumberFormat("#,##0.0", "en_US").format(totalDeposit)} บาท',
+                highlight: true,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class UserInfoTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? value;
+  final bool highlight;
+
+  const UserInfoTile({
+    super.key,
+    required this.icon,
+    required this.label,
+    this.value,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: highlight ? Colors.blue.shade50 : Colors.white,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade100,
+          child: Icon(icon, color: Colors.blue.shade900),
+        ),
+        title: Text(label,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+        subtitle: Text(value ?? '-', style: const TextStyle(fontSize: 16)),
+      ),
+    );
+  }
+}
+
+class GlassCard extends StatelessWidget {
+  final Widget child;
+
+  const GlassCard({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 15,
+            offset: Offset(0, 10),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: child,
+    );
+  }
+}
