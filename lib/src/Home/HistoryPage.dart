@@ -15,7 +15,6 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   Map<String, List<Map<String, dynamic>>> groupedDeposits = {};
   bool isLoading = true;
-
   DateTime? selectedDate;
 
   @override
@@ -38,7 +37,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
     try {
       final response = await http.get(Uri.parse(url));
-
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
         final List data = result['data'];
@@ -55,6 +53,8 @@ class _HistoryPageState extends State<HistoryPage> {
             'id': item['id_DepositAm'],
             'time': time,
             'amount': item['amount_Deposit'],
+            'id_status': item['id_status'],
+            'status_name': item['status_name'],
           });
         }
 
@@ -163,6 +163,8 @@ class GroupedDepositList extends StatelessWidget {
             ...transactions.map((tx) => DepositCard(
               time: tx['time'],
               amount: (tx['amount'] as num).toDouble(),
+              status: tx['status_name'] ?? 'ไม่ระบุ',
+              idStatus: tx['id_status'] ?? '',
             )),
             const SizedBox(height: 24),
           ],
@@ -175,11 +177,34 @@ class GroupedDepositList extends StatelessWidget {
 class DepositCard extends StatelessWidget {
   final String time;
   final double amount;
+  final String status;
+  final String idStatus;
 
-  const DepositCard({super.key, required this.time, required this.amount});
+  const DepositCard({
+    super.key,
+    required this.time,
+    required this.amount,
+    required this.status,
+    required this.idStatus,
+  });
 
   @override
   Widget build(BuildContext context) {
+    Color bgColor;
+    switch (idStatus) {
+      case 'S001':
+        bgColor = Colors.green[600]!;
+        break;
+      case 'S002':
+        bgColor = Colors.orange[600]!;
+        break;
+      case 'S003':
+        bgColor = Colors.red[600]!;
+        break;
+      default:
+        bgColor = Colors.grey;
+    }
+
     return Card(
       elevation: 3,
       margin: const EdgeInsets.only(bottom: 12),
@@ -220,14 +245,15 @@ class DepositCard extends StatelessWidget {
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.green[600],
+                color: bgColor,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'สำเร็จ',
-                style: TextStyle(color: Colors.white, fontSize: 12),
+              child: Text(
+                status,
+                style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
             )
           ],
