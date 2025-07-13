@@ -83,9 +83,22 @@ class _SlippageState extends State<Slippage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D47A1),
-        title: const Text("สลิปเงินฝาก", style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text(
+          "สลิปเงินฝาก",
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            color: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

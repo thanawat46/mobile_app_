@@ -95,11 +95,25 @@ class _CreateSavingsPageState extends State<CreateSavingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('เพิ่มข้อมูลบัญชีเงินฝาก'),
+        title: const Text(
+          'เพิ่มข้อมูลบัญชีเงินฝาก',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
         elevation: 4,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            color: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
       ),
+
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -91,7 +91,7 @@ class _LoanPageState extends State<Loanpage> {
       height: 300,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
+          colors: [Color(0xFFC62828), Color(0xFFFFFFFF)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -134,11 +134,11 @@ class _LoanPageState extends State<Loanpage> {
                       // ไปหน้าชำระเงิน
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF0069FF),
+                      backgroundColor: Color(0xFFC62828),
                       padding: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
-                    child: Text("ชำระเงินกู้", style: TextStyle(fontSize: 18)),
+                    child: Text("ชำระเงินกู้", style: TextStyle(fontSize: 18, color: Colors.white)),
                   ),
                 ],
               ),

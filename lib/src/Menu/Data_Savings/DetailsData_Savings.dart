@@ -114,11 +114,25 @@ class _DetailsData_SavingsState extends State<DetailsData_Savings> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('รายละเอียดสมาชิก', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'รายละเอียดสมาชิก',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            color: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
       ),
+
       body: Stack(
         children: [
           Container(

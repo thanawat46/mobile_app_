@@ -122,7 +122,7 @@ class _SavingspageState extends State<Savingspage> {
       height: 300,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF0D47A1), Color(0xFF42A5F5)],
+          colors: [Color(0xFF2E7D32), Color(0xFFFFFFFF)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -168,7 +168,7 @@ class _SavingspageState extends State<Savingspage> {
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0069FF),
+                      backgroundColor: const Color(0xFF2E7D32),
                       padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 10),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),

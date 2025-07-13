@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import ' Create_Savings.dart';
+import 'Create_Savings.dart';
 import 'DetailsData_Savings.dart';
 import 'package:mobile_app/constants.dart' as config;
 
@@ -64,10 +64,23 @@ class _SavingScreenState extends State<SavingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("รายชื่อสมาชิกเงินฝาก", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "รายชื่อสมาชิกเงินฝาก",
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: const Color(0xFF0D47A1),
-        iconTheme: const IconThemeData(color: Colors.white),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            color: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -96,7 +109,6 @@ class _SavingScreenState extends State<SavingScreen> {
                 itemBuilder: (context, index) => UserRowItem(
                   user: filteredUsers[index],
                   index: index,
-                  // ✅ สำหรับเปิดดูรายละเอียด
                   onTap: () async {
                     final result = await Navigator.push(
                       context,

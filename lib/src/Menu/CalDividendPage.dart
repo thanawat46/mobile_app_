@@ -45,8 +45,22 @@ class _CaldividendpageState extends State<Caldividendpage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D47A1),
-        title: const Text("คำนวณเงินปันผล", style: TextStyle(color: Colors.white)),
+        title: const Text(
+          "คำนวณเงินปันผล",
+          style: TextStyle(color: Colors.white),
+        ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 20), // ขยับ icon ไปทางขวา
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios),
+            color: Colors.white,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
       ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

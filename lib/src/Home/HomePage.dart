@@ -70,6 +70,18 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Color getAppBarColor() {
+    switch (_selectedIndex) {
+      case 1:
+        return const Color(0xFF2E7D32);
+      case 2:
+        return const Color(0xFFC62828);
+      default:
+        return const Color(0xFF0D47A1);
+    }
+  }
+
+
   Widget _getPage(int index) {
     switch (index) {
       case 0:
@@ -91,7 +103,7 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xFF0D47A1),
+        backgroundColor: getAppBarColor(),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
