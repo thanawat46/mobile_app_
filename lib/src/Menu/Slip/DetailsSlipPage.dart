@@ -120,14 +120,10 @@ class SlipDetailCard extends StatelessWidget {
           content: Text(message),
         ),
       );
-
       await Future.delayed(const Duration(seconds: 1));
       if (context.mounted) {
         Navigator.pop(context);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const Slippage()),
-        );
+        Navigator.pop(context);
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
