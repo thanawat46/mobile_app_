@@ -1,3 +1,3 @@
 import 'package:mobile_app/constants.dart';
 
-const String apiUrl = 'http://192.168.1.37:3000';
+const String apiUrl = 'http://172.20.10.9:3000';

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_nav_bar/google_nav_bar.dart';
 import '../Loan/LoanPage.dart';
+import '../Loan/LoanRequestPage.dart';
 import '../Menu/MenuPage.dart';
 import 'package:mobile_app/constants.dart' as config;
 import 'package:intl/intl.dart';
@@ -50,11 +51,11 @@ class _HomePageState extends State<HomePage> {
         });
       }
 
-      final loanRes = await http.get(Uri.parse("${config.apiUrl}/loan-amount/${widget.idUser.trim()}"));
+      final loanRes = await http.get(Uri.parse("${config.apiUrl}/loan/${widget.idUser.trim()}"));
       if (loanRes.statusCode == 200) {
         final loanData = jsonDecode(loanRes.body);
         setState(() {
-          loanAmount = double.tryParse(loanData["loan_amount"].toString()) ?? 0.0;
+          loanAmount = double.tryParse(loanData["loan_balance"].toString()) ?? 0.0;
         });
       }
 
@@ -188,7 +189,7 @@ class _HomePageState extends State<HomePage> {
         if (title == "เงินกู้") {
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Loanpage(idUser: widget.idUser)),
+            MaterialPageRoute(builder: (context) => LoanRequestPage(idUser: widget.idUser)),
           );
         } else if (title == "เงินฝาก") {
           await Navigator.push(
