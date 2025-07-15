@@ -2,17 +2,19 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
 import 'package:mobile_app/constants.dart' as config;
-
 import '../Home/HomePage.dart';
 
 class SlipPage extends StatefulWidget {
   final String memberId;
   final double amount;
   final String idDepositAm;
+
 
   const SlipPage({
     super.key,
@@ -29,6 +31,9 @@ class _SlipPageState extends State<SlipPage> {
   File? _slipImage;
   final ImagePicker _picker = ImagePicker();
   bool _isLoading = false;
+  String? _extractedSlipNumber;
+  String? _extractedAmount;
+  String? _qrCodeValue;
 
   @override
   void initState() {
@@ -39,11 +44,17 @@ class _SlipPageState extends State<SlipPage> {
   Future<void> _pickSlipImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
+      final file = File(pickedFile.path);
       setState(() {
-        _slipImage = File(pickedFile.path);
+        _slipImage = file;
       });
+
+      await scanQRCodeFromImage(file);
+      await scanTextFromImage(file);
     }
   }
+
+
 
   Future<void> _submitSlip(BuildContext context) async {
     if (_slipImage == null) {
@@ -61,7 +72,6 @@ class _SlipPageState extends State<SlipPage> {
     final destination = 'slips/$fileName';
 
     try {
-      // 🔵 แสดง popup โหลด
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -89,7 +99,11 @@ class _SlipPageState extends State<SlipPage> {
         "id_user": widget.memberId,
         "image_slip": downloadUrl,
         "id_DepositAm": widget.idDepositAm,
+        "slip_number": _extractedSlipNumber ?? '',
+        "amount_slip": _extractedAmount ?? '',
+        "data_slip": _qrCodeValue ?? ''
       };
+
 
       final url = Uri.parse('${config.apiUrl}/upload-slip');
       final response = await http.post(
@@ -98,13 +112,11 @@ class _SlipPageState extends State<SlipPage> {
         body: jsonEncode(body),
       );
 
-      // 🔵 ปิด popup โหลด
       if (context.mounted) Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
         if (!context.mounted) return;
 
-        // แสดง popup แบบไม่มีปุ่มและปิดเองใน 3 วิ
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -124,7 +136,7 @@ class _SlipPageState extends State<SlipPage> {
 
         await Future.delayed(const Duration(seconds: 2));
         if (!context.mounted) return;
-        Navigator.of(context).pop(); // ปิด dialog
+        Navigator.of(context).pop();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => HomePage(idUser: widget.memberId)),
@@ -150,6 +162,76 @@ class _SlipPageState extends State<SlipPage> {
       }
     }
   }
+
+  Future<void> scanQRCodeFromImage(File imageFile) async {
+    try {
+      final inputImage = InputImage.fromFile(imageFile);
+      final barcodeScanner = BarcodeScanner();
+      final barcodes = await barcodeScanner.processImage(inputImage);
+
+      for (final barcode in barcodes) {
+        final qrText = barcode.rawValue;
+        if (qrText != null) {
+          _qrCodeValue = qrText;
+          debugPrint('📦 ข้อมูลใน QR Code: $_qrCodeValue');
+        }
+      }
+
+      await barcodeScanner.close();
+    } catch (e) {
+      debugPrint('❌ อ่าน QR ไม่สำเร็จ: $e');
+    }
+  }
+
+  Future<void> scanTextFromImage(File imageFile) async {
+    try {
+      final inputImage = InputImage.fromFile(imageFile);
+      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+      final recognizedText = await textRecognizer.processImage(inputImage);
+      await textRecognizer.close();
+
+      final extracted = extractSlipData(recognizedText.text);
+      _extractedAmount = extracted['amount'];
+      _extractedSlipNumber = extracted['reference'];
+
+      debugPrint('📖 ข้อความที่อ่านได้:\n${recognizedText.text}');
+      debugPrint('💰 จำนวนเงิน: $_extractedAmount');
+      debugPrint('🔢 เลขที่รายการ: $_extractedSlipNumber');
+    } catch (e) {
+      debugPrint('❌ อ่านข้อความไม่สำเร็จ: $e');
+    }
+  }
+
+  Map<String, String> extractSlipData(String text) {
+    final Map<String, String> result = {};
+
+    // รวมข้อความทุกบรรทัดเป็นข้อความเดียว
+    final cleanedText = text.replaceAll('\n', ' ').replaceAll('\r', ' ');
+
+    // 💰 ดึงจำนวนเงิน เช่น 200.00 หรือ 1,000.00
+    final amountMatch = RegExp(r'(\d{1,3}(?:,\d{3})*(?:\.\d{2}))').firstMatch(cleanedText);
+    if (amountMatch != null) result['amount'] = amountMatch.group(1)!;
+
+    // 🔢 ดึงเลขที่อ้างอิง (รองรับ: เลขที่รายการ, รหัสอ้างอิง, รหัสทำรายการ, Ref, Reference)
+    final refPattern = RegExp(
+      r'(?:เลขที่รายการ|รหัสอ้างอิง|รหัสทำรายการ|Ref(?:erence)?)?[\s:\-]*([A-Z0-9]{12,})',
+      caseSensitive: false,
+    );
+    final refMatch = refPattern.firstMatch(cleanedText);
+    if (refMatch != null) result['reference'] = refMatch.group(1)!;
+
+    // 🗓 ดึงวันที่ เช่น 28 เม.ย. 2568 หรือ 01/07/2025
+    final datePattern = RegExp(r'(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{1,2} [ก-๙]+\.? \d{4})');
+    final dateMatch = datePattern.firstMatch(cleanedText);
+    if (dateMatch != null) result['date'] = dateMatch.group(1)!;
+
+    // 🕐 ดึงเวลา เช่น 15:39
+    final timeMatch = RegExp(r'(\d{1,2}:\d{2})').firstMatch(cleanedText);
+    if (timeMatch != null) result['time'] = timeMatch.group(1)!;
+
+    return result;
+  }
+
 
   @override
   Widget build(BuildContext context) {

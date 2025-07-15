@@ -45,7 +45,7 @@ class _SlippageState extends State<Slippage> {
             .map((item) {
           final fullDate = DateTime.parse(item['date']);
           return {
-            "id_slip": item['id_slip'].toString(), // ✅ ใช้ id_slip แทน slip_number
+            "id_slip": item['id_slip'].toString(),
             "name": "${item['first_name']} ${item['last_name']}",
             "date":
             "${fullDate.year}-${fullDate.month.toString().padLeft(2, '0')}-${fullDate.day.toString().padLeft(2, '0')}",
@@ -54,8 +54,6 @@ class _SlippageState extends State<Slippage> {
             "status": item['status_name'],
           };
         }).toList();
-
-        print("✅ จำนวนสลิปที่โหลดได้: ${data.length}");
         setState(() {
           slipData = data;
           isLoading = false;
