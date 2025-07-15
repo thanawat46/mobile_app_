@@ -71,7 +71,64 @@ class _SlipPageState extends State<SlipPage> {
     final fileName = basename(_slipImage!.path);
     final destination = 'slips/$fileName';
 
+    final slipNumber = _extractedSlipNumber ?? '';
+    final amount = _extractedAmount ?? '';
+    final dataSlip = _qrCodeValue ?? '';
+
     try {
+      // 🛑 ตรวจสอบว่าสลิปซ้ำหรือไม่
+      final checkUrl = Uri.parse('${config.apiUrl}/check-slip-duplicate');
+      final checkResponse = await http.post(
+        checkUrl,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "slip_number": slipNumber,
+          "data_slip": dataSlip,
+        }),
+      );
+
+      final isDuplicate = checkResponse.statusCode == 200 &&
+          jsonDecode(checkResponse.body)['duplicate'] == true;
+
+      if (isDuplicate) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: const [
+                Icon(Icons.warning_amber_rounded, color: Color(0xFF0069FF), size: 28),
+                SizedBox(width: 10),
+                Text(
+                  "คำเตือน",
+                  style: TextStyle(
+                    color: Color(0xFF0069FF),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+            content: const Text(
+              "❌ สลิปนี้ถูกใช้งานแล้ว",
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+        if (context.mounted) Navigator.of(context).pop();
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // 🔄 แสดง popup loading
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -88,31 +145,26 @@ class _SlipPageState extends State<SlipPage> {
       );
 
       final ref = FirebaseStorage.instance.ref(destination);
-      await ref.putFile(
-        _slipImage!,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-
+      await ref.putFile(_slipImage!, SettableMetadata(contentType: 'image/jpeg'));
       final downloadUrl = await ref.getDownloadURL();
 
       final body = {
         "id_user": widget.memberId,
         "image_slip": downloadUrl,
         "id_DepositAm": widget.idDepositAm,
-        "slip_number": _extractedSlipNumber ?? '',
-        "amount_slip": _extractedAmount ?? '',
-        "data_slip": _qrCodeValue ?? ''
+        "slip_number": slipNumber,
+        "amount_slip": amount,
+        "data_slip": dataSlip,
       };
 
-
-      final url = Uri.parse('${config.apiUrl}/upload-slip');
+      final uploadUrl = Uri.parse('${config.apiUrl}/upload-slip');
       final response = await http.post(
-        url,
+        uploadUrl,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
       );
 
-      if (context.mounted) Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop(); // ปิด loading
 
       if (response.statusCode == 200) {
         if (!context.mounted) return;
@@ -149,7 +201,7 @@ class _SlipPageState extends State<SlipPage> {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // ปิด popup หากมี
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("เกิดข้อผิดพลาด: $e")),
         );
