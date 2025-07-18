@@ -41,6 +41,7 @@ class _ProfileState extends State<Profilepage> {
         if (data['message'] == 'พบผู้ใช้งาน') {
           setState(() {
             userData = data['data'];
+            profileImageUrl = data['data']['profile_image'];
             isLoading = false;
           });
         } else {
@@ -72,8 +73,6 @@ class _ProfileState extends State<Profilepage> {
       if (picked == null) return;
 
       final file = File(picked.path);
-      print("ไฟล์อยู่ไหม: ${file.existsSync()}");
-
       if (!file.existsSync()) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("ไม่พบไฟล์รูปภาพที่เลือก")),
@@ -84,6 +83,7 @@ class _ProfileState extends State<Profilepage> {
       final fileName = 'profile_${widget.idUser}_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final destination = 'profile_images/$fileName';
 
+      // แสดงโหลด
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -98,6 +98,7 @@ class _ProfileState extends State<Profilepage> {
         ),
       );
 
+      // ลบรูปเก่าถ้ามี
       if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
         try {
           final refToDelete = FirebaseStorage.instance.refFromURL(profileImageUrl!);
@@ -108,45 +109,81 @@ class _ProfileState extends State<Profilepage> {
         }
       }
 
+      // อัปโหลดใหม่
       final ref = FirebaseStorage.instance.ref(destination);
       await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
       final downloadUrl = await ref.getDownloadURL();
 
-      if (!mounted) return;
-      Navigator.of(context).pop();
-
-      setState(() {
-        profileImageUrl = downloadUrl;
-      });
-      
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: const [
-              Icon(Icons.check_circle, color: Color(0xFF0069FF), size: 28),
-              SizedBox(width: 10),
-              Text("สำเร็จ", style: TextStyle(color: Color(0xFF0069FF), fontWeight: FontWeight.bold)),
-            ],
-          ),
-          content: const Text("เปลี่ยนรูปโปรไฟล์เรียบร้อยแล้ว"),
-        ),
+      // ส่ง URL ไปเก็บใน Database
+      final response = await http.post(
+        Uri.parse('${config.apiUrl}/users/profile-image'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id_user': widget.idUser,
+          'profile_image': downloadUrl,
+        }),
       );
 
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) Navigator.of(context).pop();
+      if (!mounted) return;
+      Navigator.of(context).pop(); // ปิด popup loading
 
+      if (response.statusCode == 200) {
+        setState(() {
+          profileImageUrl = downloadUrl;
+        });
+
+        // แสดง popup สำเร็จ
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: const [
+                Icon(Icons.check_circle, color: Color(0xFF0069FF), size: 28),
+                SizedBox(width: 10),
+                Text("สำเร็จ", style: TextStyle(color: Color(0xFF0069FF), fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: const Text("เปลี่ยนรูปโปรไฟล์เรียบร้อยแล้ว"),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) Navigator.of(context).pop(); // ปิด popup สำเร็จ
+      } else {
+        throw Exception("อัปเดต URL ไปยัง backend ไม่สำเร็จ: ${response.body}");
+      }
     } catch (e, s) {
       print("Upload error: $e");
       print(s);
       if (mounted) {
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(); // ปิด popup โหลดถ้ามี
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("เกิดข้อผิดพลาดในการอัปโหลด: $e")),
         );
       }
+    }
+  }
+
+  Future<void> updateProfileImageToDatabase(String imageUrl) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${config.apiUrl}/users/profile-image'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id_user': widget.idUser,
+          'profile_image': imageUrl,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print("อัปเดตรูปโปรไฟล์ในฐานข้อมูลเรียบร้อยแล้ว");
+      } else {
+        print("เกิดข้อผิดพลาดในการอัปเดตโปรไฟล์: ${response.body}");
+      }
+    } catch (e) {
+      print("ส่งข้อมูล URL รูปภาพผิดพลาด: $e");
     }
   }
 

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_nav_bar/google_nav_bar.dart';
+import '../Announcement/Announcement_page.dart';
 import '../Loan/LoanPage.dart';
 import '../Loan/LoanRequestPage.dart';
 import '../Menu/MenuPage.dart';
@@ -175,7 +176,7 @@ class _HomePageState extends State<HomePage> {
               _menuButton(Icons.arrow_downward, "เงินฝาก"),
               _menuButton(Icons.arrow_upward, "เงินกู้"),
               _menuButton(Icons.history, "ประวัติ"),
-              _menuButton(Icons.admin_panel_settings, "เมนูแอดมิน"),
+              _menuButton(Icons.feedback, "ประกาศข่าวสาร"),
             ],
           ),
         ],
@@ -196,10 +197,10 @@ class _HomePageState extends State<HomePage> {
             context,
             MaterialPageRoute(builder: (context) => Savingspage(idUser: widget.idUser)),
           );
-        } else if (title == "เมนูแอดมิน") {
+        } else if (title == "ประกาศข่าวสาร") {
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => MenuPage(idUser: widget.idUser)),
+            MaterialPageRoute(builder: (context) => AnnouncementPage()),
           );
         } else if (title == "ประวัติ") {
           await Navigator.push(
