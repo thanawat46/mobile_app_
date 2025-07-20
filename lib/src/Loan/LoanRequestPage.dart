@@ -1,7 +1,11 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:mobile_app/constants.dart' as config;
-import 'dart:convert';
 
 class LoanRequestPage extends StatefulWidget {
   final String idUser;
@@ -14,21 +18,90 @@ class LoanRequestPage extends StatefulWidget {
 
 class _LoanRequestPageState extends State<LoanRequestPage> {
   bool _isLoanRequested = false;
-  bool _isLoading = false;
-
   final TextEditingController _loanReasonController = TextEditingController();
   final TextEditingController _loanAmountController = TextEditingController();
+  String? uploadedDocumentUrl;
 
-  void _submitLoanRequest() async {
+  final String _contractTemplateUrl =
+      'https://firebasestorage.googleapis.com/v0/b/YOUR_PROJECT.appspot.com/o/contract%2Fcontract_template.pdf?alt=media';
+
+  Future<void> _downloadOriginalContract() async {
+    final uri = Uri.parse(_contractTemplateUrl);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("ไม่สามารถเปิดเอกสารสัญญาได้")),
+      );
+    }
+  }
+
+  Future<void> pickAndUploadDocument() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 75,
+      );
+      if (picked == null) return;
+
+      final file = File(picked.path);
+      if (!file.existsSync()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("ไม่พบไฟล์ที่เลือก")),
+        );
+        return;
+      }
+
+      final fileName =
+          'loan_doc_${widget.idUser}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final destination = 'loan_documents/$fileName';
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(color: Color(0xFF0069FF)),
+              SizedBox(width: 16),
+              Text("กำลังอัปโหลดเอกสาร..."),
+            ],
+          ),
+        ),
+      );
+
+      final ref = FirebaseStorage.instance.ref(destination);
+      await ref.putFile(file);
+      final downloadUrl = await ref.getDownloadURL();
+
+      Navigator.of(context).pop();
+
+      setState(() {
+        uploadedDocumentUrl = downloadUrl;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("อัปโหลดเอกสารสำเร็จ")),
+      );
+    } catch (e) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("อัปโหลดล้มเหลว: $e")),
+      );
+    }
+  }
+
+  Future<void> _submitLoanRequest() async {
     final reason = _loanReasonController.text.trim();
     final amount = double.tryParse(_loanAmountController.text.trim());
 
-    if (reason.isEmpty || amount == null || amount <= 0) {
-      _showSnackbar("กรุณากรอกเหตุผลและจำนวนเงินให้ถูกต้อง", Colors.red);
+    if (reason.isEmpty || amount == null || uploadedDocumentUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("กรุณากรอกข้อมูลและอัปโหลดเอกสารให้ครบ"),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
-
-    setState(() => _isLoading = true);
 
     final url = Uri.parse('${config.apiUrl}/loan_requests');
 
@@ -40,6 +113,7 @@ class _LoanRequestPageState extends State<LoanRequestPage> {
           'id_user': widget.idUser,
           'loan_amount': amount,
           'notes': reason,
+          'document_url': uploadedDocumentUrl,
         }),
       );
 
@@ -47,166 +121,123 @@ class _LoanRequestPageState extends State<LoanRequestPage> {
         setState(() {
           _isLoanRequested = true;
         });
-        _showSnackbar("คำขอกู้เงินถูกส่งเรียบร้อย", Colors.green);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("ส่งคำขอกู้เงินสำเร็จ"),
+              backgroundColor: Colors.green),
+        );
       } else {
-        _showSnackbar("เกิดข้อผิดพลาด (${response.statusCode})", Colors.red);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("ผิดพลาด: ${response.statusCode}"),
+              backgroundColor: Colors.red),
+        );
       }
     } catch (e) {
-      _showSnackbar("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์", Colors.red);
-    } finally {
-      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: $e"),
+            backgroundColor: Colors.red),
+      );
     }
-  }
-
-  void _showSnackbar(String message, Color color) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: color,
-    ));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE3F2FD),
+      backgroundColor: const Color(0xFF0D47A1),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D47A1),
         elevation: 0,
         title: const Text("ขอกู้เงิน", style: TextStyle(color: Colors.white)),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Stack(
+      body: Column(
         children: [
-          _buildFormContent(),
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFormContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          _buildProfileCard(),
           const SizedBox(height: 20),
-          _buildStepInfo(),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _loanAmountController,
-            label: "จำนวนเงินที่ต้องการกู้ (บาท)",
-            hint: "เช่น 10000",
-            icon: Icons.attach_money,
-            keyboard: TextInputType.number,
-          ),
-          const SizedBox(height: 20),
-          _buildTextField(
-            controller: _loanReasonController,
-            label: "เหตุผลในการกู้เงิน",
-            hint: "เพื่อซ่อมบ้าน, เพื่อศึกษาต่อ ฯลฯ",
-            icon: Icons.edit_note,
-            maxLines: 3,
-          ),
-          const SizedBox(height: 30),
-          if (_isLoanRequested)
-            _buildInfoBox("คุณมีคำขอกู้ที่รอการอนุมัติ", Icons.hourglass_top, Colors.orange),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _isLoanRequested ? null : _submitLoanRequest,
-            icon: const Icon(Icons.send),
-            label: const Text("ส่งคำขอกู้", style: TextStyle(fontSize: 18)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isLoanRequested ? Colors.grey : Colors.blue[800],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 30),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Card(
               elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.person)),
+                title: Text("รหัสผู้ใช้: ${widget.idUser}"),
+                subtitle: const Text("กรุณากรอกข้อมูลให้ครบถ้วน"),
+              ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue[700],
-          child: const Icon(Icons.person, color: Colors.white),
-        ),
-        title: Text(
-          "รหัสผู้ใช้: ${widget.idUser}",
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: const Text("กรุณากรอกแบบฟอร์มด้านล่างให้ครบถ้วน"),
-      ),
-    );
-  }
-
-  Widget _buildStepInfo() {
-    return Row(
-      children: const [
-        Icon(Icons.check_circle, color: Colors.green),
-        SizedBox(width: 8),
-        Text(
-          "ขั้นตอนที่ 1/1: กรอกข้อมูลการขอกู้เงิน",
-          style: TextStyle(fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType keyboard = TextInputType.text,
-    int maxLines = 1,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          keyboardType: keyboard,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            prefixIcon: Icon(icon),
-            hintText: hint,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF4F6F8),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: ListView(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _downloadOriginalContract,
+                    icon: const Icon(Icons.download),
+                    label: const Text("ดาวน์โหลดเอกสารสัญญา"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: pickAndUploadDocument,
+                    icon: const Icon(Icons.upload),
+                    label: const Text("อัปโหลดเอกสารสัญญาที่เขียนแล้ว"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                  if (uploadedDocumentUrl != null) ...[
+                    const SizedBox(height: 8),
+                    Text("✔️ อัปโหลดแล้ว", style: TextStyle(color: Colors.green)),
+                  ],
+                  const SizedBox(height: 24),
+                  const Text("จำนวนเงินที่ต้องการกู้"),
+                  TextField(
+                    controller: _loanAmountController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.attach_money),
+                      filled: true,
+                      hintText: "เช่น 10000",
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text("เหตุผลในการกู้"),
+                  TextField(
+                    controller: _loanReasonController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.edit_note),
+                      filled: true,
+                      hintText: "เพื่อซ่อมบ้าน, เพื่อเรียน ฯลฯ",
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton.icon(
+                    onPressed: _isLoanRequested ? null : _submitLoanRequest,
+                    icon: const Icon(Icons.send),
+                    label: const Text("ส่งคำขอกู้"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                      _isLoanRequested ? Colors.grey : Colors.green,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoBox(String message, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(width: 10),
-          Expanded(child: Text(message, style: const TextStyle(fontWeight: FontWeight.bold))),
         ],
       ),
     );

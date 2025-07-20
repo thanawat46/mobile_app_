@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../Loan/LoanApprovalPage.dart';
 import 'Account/Account_Deposit.dart';
 import 'CalDividendPage.dart';
 import 'CommitteePage.dart';
@@ -109,7 +110,7 @@ class MenuPage extends StatelessWidget {
                   MaterialPageRoute(
                     builder:
                         (context) =>
-                            const CommitteePage(),
+                    const CommitteePage(),
                   ),
                 );
               },
@@ -121,10 +122,10 @@ class MenuPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (context) => EditLoanStatusPage(
-                          idUser: idUser,
-                        )
+                      builder:
+                          (context) => EditLoanStatusPage(
+                        idUser: idUser,
+                      )
                   ),
                 );
               },
@@ -138,6 +139,20 @@ class MenuPage extends StatelessWidget {
                   MaterialPageRoute(
                       builder:
                           (context) => Account_Deposit(
+                      )
+                  ),
+                );
+              },
+            ),
+            _menuButton(
+              icon: Icons.payments,
+              label: "จัดการสลิป",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder:
+                          (context) => LoanApprovalPage(
                       )
                   ),
                 );

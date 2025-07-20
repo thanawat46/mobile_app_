@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_app/constants.dart' as config;
 import 'dart:convert';
+import 'LoanPaymentPage.dart';
 
 class Loanpage extends StatefulWidget {
   final String idUser;
@@ -131,7 +132,12 @@ class _LoanPageState extends State<Loanpage> {
                   SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
-                      // ไปหน้าชำระเงิน
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LoanPaymentPage(idUser: widget.idUser),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFFC62828),
