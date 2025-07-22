@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'package:mobile_app/constants.dart' as config;
 import 'dart:convert';
 import 'LoanPaymentPage.dart';
@@ -35,13 +36,14 @@ class _LoanPageState extends State<Loanpage> {
         print("Loan API response: $data"); // debug
 
         setState(() {
-          loanBalance = (data["loan_balance"] ?? 0).toDouble();
+          loanBalance = double.tryParse(data["loan_balance"].toString()) ?? 0.0;
           repaymentList = List<Map<String, dynamic>>.from(data["repayment_schedule"]);
         });
       } else {
         _showErrorDialog("เกิดข้อผิดพลาด: ${response.statusCode}");
       }
     } catch (e) {
+      print("ERROR: $e");
       _showErrorDialog("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์");
     } finally {
       setState(() => _isLoading = false);
@@ -87,6 +89,7 @@ class _LoanPageState extends State<Loanpage> {
   }
 
   Widget _buildHeader() {
+    final formattedAmount = NumberFormat("#,###").format(loanBalance ?? 0);
     return Container(
       width: double.infinity,
       height: 300,
@@ -126,8 +129,8 @@ class _LoanPageState extends State<Loanpage> {
                   Text("ยอดเงินกู้ยืม", style: TextStyle(fontSize: 16)),
                   SizedBox(height: 10),
                   Text(
-                    "฿${loanBalance?.toStringAsFixed(0) ?? '0'}",
-                    style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
+                    "฿$formattedAmount",
+                    style: const TextStyle(fontSize: 36, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 20),
                   ElevatedButton(

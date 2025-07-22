@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../Loan/LoanApprovalPage.dart';
 import 'Account/Account_Deposit.dart';
 import 'CalDividendPage.dart';
-import 'CommitteePage.dart';
+import 'Committee/CommitteePage.dart';
 import 'Data_Loan.dart';
 import 'Data_Savings/Data_Savings.dart';
 import 'Loan/EditLoanStatusPage.dart';

@@ -180,8 +180,8 @@ class _LoanRequestPageState extends State<LoanRequestPage> {
                 children: [
                   ElevatedButton.icon(
                     onPressed: _downloadOriginalContract,
-                    icon: const Icon(Icons.download),
-                    label: const Text("ดาวน์โหลดเอกสารสัญญา"),
+                    icon: const Icon(Icons.download, color: Colors.white), // <-- ไอคอนขาว
+                    label: const Text("ดาวน์โหลดเอกสารสัญญา", style: TextStyle(color: Colors.white)), // <-- ข้อความขาว
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -190,8 +190,8 @@ class _LoanRequestPageState extends State<LoanRequestPage> {
                   const SizedBox(height: 12),
                   ElevatedButton.icon(
                     onPressed: pickAndUploadDocument,
-                    icon: const Icon(Icons.upload),
-                    label: const Text("อัปโหลดเอกสารสัญญาที่เขียนแล้ว"),
+                    icon: const Icon(Icons.upload, color: Colors.white),
+                    label: const Text("อัปโหลดเอกสารสัญญาที่เขียนแล้ว", style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -226,11 +226,10 @@ class _LoanRequestPageState extends State<LoanRequestPage> {
                   const SizedBox(height: 30),
                   ElevatedButton.icon(
                     onPressed: _isLoanRequested ? null : _submitLoanRequest,
-                    icon: const Icon(Icons.send),
-                    label: const Text("ส่งคำขอกู้"),
+                    icon: const Icon(Icons.send, color: Colors.white), // ไอคอนขาว
+                    label: const Text("ส่งคำขอกู้", style: TextStyle(color: Colors.white)), // ข้อความขาว
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                      _isLoanRequested ? Colors.grey : Colors.green,
+                      backgroundColor: _isLoanRequested ? Colors.grey : Colors.green,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),

@@ -76,7 +76,6 @@ class _SlipPageState extends State<SlipPage> {
     final dataSlip = _qrCodeValue ?? '';
 
     try {
-      // 🛑 ตรวจสอบว่าสลิปซ้ำหรือไม่
       final checkUrl = Uri.parse('${config.apiUrl}/check-slip-duplicate');
       final checkResponse = await http.post(
         checkUrl,
@@ -128,7 +127,6 @@ class _SlipPageState extends State<SlipPage> {
         return;
       }
 
-      // 🔄 แสดง popup loading
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -257,14 +255,11 @@ class _SlipPageState extends State<SlipPage> {
   Map<String, String> extractSlipData(String text) {
     final Map<String, String> result = {};
 
-    // รวมข้อความทุกบรรทัดเป็นข้อความเดียว
     final cleanedText = text.replaceAll('\n', ' ').replaceAll('\r', ' ');
 
-    // 💰 ดึงจำนวนเงิน เช่น 200.00 หรือ 1,000.00
     final amountMatch = RegExp(r'(\d{1,3}(?:,\d{3})*(?:\.\d{2}))').firstMatch(cleanedText);
     if (amountMatch != null) result['amount'] = amountMatch.group(1)!;
 
-    // 🔢 ดึงเลขที่อ้างอิง (รองรับ: เลขที่รายการ, รหัสอ้างอิง, รหัสทำรายการ, Ref, Reference)
     final refPattern = RegExp(
       r'(?:เลขที่รายการ|รหัสอ้างอิง|รหัสทำรายการ|Ref(?:erence)?)?[\s:\-]*([A-Z0-9]{12,})',
       caseSensitive: false,
@@ -272,12 +267,10 @@ class _SlipPageState extends State<SlipPage> {
     final refMatch = refPattern.firstMatch(cleanedText);
     if (refMatch != null) result['reference'] = refMatch.group(1)!;
 
-    // 🗓 ดึงวันที่ เช่น 28 เม.ย. 2568 หรือ 01/07/2025
     final datePattern = RegExp(r'(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{1,2} [ก-๙]+\.? \d{4})');
     final dateMatch = datePattern.firstMatch(cleanedText);
     if (dateMatch != null) result['date'] = dateMatch.group(1)!;
 
-    // 🕐 ดึงเวลา เช่น 15:39
     final timeMatch = RegExp(r'(\d{1,2}:\d{2})').firstMatch(cleanedText);
     if (timeMatch != null) result['time'] = timeMatch.group(1)!;
 
