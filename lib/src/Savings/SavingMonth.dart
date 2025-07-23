@@ -87,7 +87,6 @@ class _DepositByMonthPageState extends State<DepositByMonthPage> {
       return;
     }
 
-
     final depositMonth = List.generate(12, (index) {
       final month = index + 1;
       final amount = _controllers[_months[index]]?.text ?? '0';
@@ -129,7 +128,7 @@ class _DepositByMonthPageState extends State<DepositByMonthPage> {
         if (responseBody['data'] != null && responseBody['data']['idDepositAm'] != null) {
           final idDepositAm = responseBody['data']['idDepositAm'].toString();
 
-          Navigator.push(
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => SlipPage(
@@ -139,6 +138,12 @@ class _DepositByMonthPageState extends State<DepositByMonthPage> {
               ),
             ),
           );
+
+          // ✅ ถ้าไม่ได้แนบสลิป → ลบ deposit_amount
+          if (result != 'slip_uploaded') {
+            await _deleteDepositAmount(idDepositAm);
+          }
+
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("ไม่พบข้อมูล id_DepositAm ใน API Response")),
@@ -156,6 +161,23 @@ class _DepositByMonthPageState extends State<DepositByMonthPage> {
       );
     }
   }
+
+  Future<void> _deleteDepositAmount(String idDepositAm) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${config.apiUrl}/deposit-amount/$idDepositAm'),
+      );
+
+      if (response.statusCode == 200) {
+        print('✔️ ลบ deposit_amount เรียบร้อยแล้ว');
+      } else {
+        print('❌ ลบไม่สำเร็จ: ${response.body}');
+      }
+    } catch (e) {
+      print('❌ Error ลบข้อมูลฝากเงิน: $e');
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {

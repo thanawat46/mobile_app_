@@ -76,6 +76,7 @@ class _SlipPageState extends State<SlipPage> {
     final dataSlip = _qrCodeValue ?? '';
 
     try {
+      // 🔍 ตรวจสอบสลิปซ้ำ
       final checkUrl = Uri.parse('${config.apiUrl}/check-slip-duplicate');
       final checkResponse = await http.post(
         checkUrl,
@@ -162,7 +163,7 @@ class _SlipPageState extends State<SlipPage> {
         body: jsonEncode(body),
       );
 
-      if (context.mounted) Navigator.of(context).pop(); // ปิด loading
+      if (context.mounted) Navigator.of(context).pop();
 
       if (response.statusCode == 200) {
         if (!context.mounted) return;
@@ -186,7 +187,12 @@ class _SlipPageState extends State<SlipPage> {
 
         await Future.delayed(const Duration(seconds: 2));
         if (!context.mounted) return;
+
         Navigator.of(context).pop();
+
+        Navigator.pop(context, 'slip_uploaded');
+        await Future.delayed(const Duration(milliseconds: 200));
+
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => HomePage(idUser: widget.memberId)),
@@ -199,7 +205,7 @@ class _SlipPageState extends State<SlipPage> {
       }
     } catch (e) {
       if (context.mounted) {
-        Navigator.of(context).pop(); // ปิด popup หากมี
+        Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("เกิดข้อผิดพลาด: $e")),
         );
