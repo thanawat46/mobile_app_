@@ -99,6 +99,14 @@ class _AddPositionPageState extends State<AddPositionPage> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-add-position', // ✅ ป้องกัน tag ซ้ำกับ FAB หน้าอื่น
+        onPressed: () {
+          _positionController.clear();
+        },
+        backgroundColor: const Color(0xFF0D47A1),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
@@ -189,28 +197,25 @@ class PositionListSection extends StatelessWidget {
               itemCount: positionList.length,
               itemBuilder: (context, index) {
                 final position = positionList[index];
-                return Hero(
-                  tag: 'position-$index',
-                  child: Card(
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: const Color(0xFF0D47A1),
-                        child: Text(
-                          '${index + 1}',
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                return Card(
+                  elevation: 2,
+                  margin: const EdgeInsets.symmetric(vertical: 6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF0D47A1),
+                      child: Text(
+                        '${index + 1}',
+                        style: const TextStyle(color: Colors.white),
                       ),
-                      title: Text(
-                        position,
-                        style: const TextStyle(
-                          color: Color(0xFF0D47A1),
-                          fontWeight: FontWeight.w600,
-                        ),
+                    ),
+                    title: Text(
+                      position,
+                      style: const TextStyle(
+                        color: Color(0xFF0D47A1),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),

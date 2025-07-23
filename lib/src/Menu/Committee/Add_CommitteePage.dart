@@ -247,6 +247,15 @@ class _Add_CommitteeState extends State<Add_Committee> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-add-committee', // ป้องกัน tag ซ้ำ
+        backgroundColor: Colors.blue[900],
+        onPressed: () {
+          // ใส่สิ่งที่คุณอยากให้ทำตอนกดปุ่ม เช่น รีเฟรชหน้า หรือกลับ
+          Navigator.pop(context);
+        },
+        child: const Icon(Icons.arrow_back),
+      ),
     );
   }
 }

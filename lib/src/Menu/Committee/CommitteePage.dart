@@ -117,6 +117,7 @@ class _CommitteePageState extends State<CommitteePage> {
             bottom: 16,
             left: 16,
             child: FloatingActionButton(
+              heroTag: 'fab-add-position',
               backgroundColor: const Color(0xFF0D47A1),
               onPressed: () {
                 Navigator.push(
@@ -131,13 +132,13 @@ class _CommitteePageState extends State<CommitteePage> {
             bottom: 16,
             right: 16,
             child: FloatingActionButton(
+              heroTag: 'fab-add-committee',
               backgroundColor: const Color(0xFF0D47A1),
               onPressed: () async {
                 final shouldRefresh = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const Add_Committee()),
                 );
-
                 if (shouldRefresh == true) {
                   fetchCommitteeData();
                 }
