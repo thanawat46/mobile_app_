@@ -62,7 +62,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
           return AnnouncementCard(item: item);
         },
       ),
-        floatingActionButton: FloatingActionButton(
+      floatingActionButton: SizedBox(
+        width: 60,
+        height: 60,
+        child: FloatingActionButton(
           onPressed: () async {
             final result = await Navigator.push(
               context,
@@ -77,8 +80,10 @@ class _AnnouncementPageState extends State<AnnouncementPage> {
             }
           },
           backgroundColor: const Color(0xFF0D47A1),
-          child: const Icon(Icons.add, color: Colors.white),
+          child: const Icon(Icons.add_photo_alternate, color: Colors.white, size: 32), // ✅ ปรับขนาด icon ด้วย
         ),
+      ),
+
     );
   }
 }

@@ -178,7 +178,6 @@ class _DepositByMonthPageState extends State<DepositByMonthPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final leftMonths = _months.sublist(0, 6);
